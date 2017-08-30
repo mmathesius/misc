@@ -1,0 +1,120 @@
+#!/bin/bash
+
+usage() {
+	if [ $# -ne 0 ]; then
+		echo "$0: $@" 1>&2
+	fi
+	echo "Usage: $0 [ -3 ] [ --debug ] [ --release 25 | 26 ] [ --testrepo /path/to/git/repo ] container | atomic | vagrant [ -- playbook-args ... ]" 1>&2
+	exit 1
+}
+
+dumpenv() {
+	echo Environment:
+	echo ANSIBLE_INVENTORY=$ANSIBLE_INVENTORY
+	echo PATH=$PATH
+	echo TEST_ARTIFACTS=$TEST_ARTIFACTS
+	echo TEST_DEBUG=$TEST_DEBUG
+	echo TEST_DYNAMIC_INVENTORY_DIRECTORY=$TEST_DYNAMIC_INVENTORY_DIRECTORY
+	echo TEST_SUBJECTS=$TEST_SUBJECTS
+}
+
+if [ `whoami` != root ]; then
+	usage Must run as root
+fi
+
+#testrepo=/home/merlinm/pagure/fork-merlinm/standard-test-roles
+testrepo=
+ansible_playbook_cmd=ansible-playbook
+ansible_tags=
+test_debug=0
+fedora_release=26
+
+while [ $# -gt 0 ]
+do
+	case "$1" in
+	-3|--3)
+		ansible_playbook_cmd=ansible-playbook-3
+		shift
+		;;
+	--debug)
+		test_debug=1
+		shift
+		;;
+	--testrepo)
+		testrepo="$2"
+		shift 2
+		;;
+	--release)
+		fedora_release="$2"
+		shift 2
+		;;
+	docker|container)
+		case $fedora_release in
+		25)
+			export TEST_SUBJECTS=docker:fedora:25 ;;
+		26)
+			export TEST_SUBJECTS=docker:fedora:26 ;;
+		esac
+		export TEST_ARTIFACTS=$PWD/artifacts-docker
+		ansible_tags=container
+		shift
+		;;
+	atomic)
+		case $fedora_release in
+		25)
+			export TEST_SUBJECTS=/home/merlinm/atomic25.qcow2 ;;
+		26)
+			export TEST_SUBJECTS=/home/merlinm/atomic26.qcow2 ;;
+		esac
+		export TEST_ARTIFACTS=$PWD/artifacts-atomic
+		ansible_tags=atomic
+		shift
+		;;
+	vagrant)
+		case $fedora_release in
+		25)
+			export TEST_SUBJECTS="https://download.fedoraproject.org/pub/fedora/linux/releases/25/CloudImages/x86_64/images/Fedora-Cloud-Base-Vagrant-25-1.3.x86_64.vagrant-libvirt.box" ;;
+		26)
+			export TEST_SUBJECTS="https://download.fedoraproject.org/pub/fedora/linux/releases/26/CloudImages/x86_64/images/Fedora-Cloud-Base-Vagrant-26-1.5.x86_64.vagrant-libvirt.box" ;;
+		esac
+		export TEST_ARTIFACTS=$PWD/artifacts-vagrant
+		ansible_tags=classic
+		shift
+		;;
+	--)
+		shift
+		break
+		;;
+	*)
+		usage
+		;;
+	esac
+done
+
+if [ -z "$ansible_tags" ]; then
+	usage
+fi
+
+if [ -n "$testrepo" ]; then
+	# include any modified scripts in path
+	export PATH=$testrepo/scripts:$PATH
+	# use any modifed dynamic inventory scripts
+	ansible_inventory=$testrepo/inventory
+	export TEST_DYNAMIC_INVENTORY_DIRECTORY=$ansible_inventory
+else
+	ansible_inventory=/usr/share/ansible/inventory
+	unset TEST_DYNAMIC_INVENTORY_DIRECTORY
+fi
+
+export ANSIBLE_INVENTORY=$(test -e inventory && echo inventory || echo $ansible_inventory)
+export TEST_DEBUG=$test_debug
+
+dumpenv
+
+mkdir -p $TEST_ARTIFACTS
+
+set -x
+#export ANSIBLE_INVENTORY=$ansible_inventory/standard-inventory-qcow2
+$ansible_playbook_cmd tests.yml --tags "$ansible_tags" "$@" 2>&1 | tee $TEST_ARTIFACTS/ansible.log
+#exec merge-standard-inventory --list
+#exec $ansible_inventory/standard-inventory-vagrant --list
