@@ -1,0 +1,3 @@
+#!/bin/bash
+bz_regex="\\(bugzilla.*\\|\\(\\<bug\\>\\|bz\\)\\([[:space:]]\\|#\\|:\\)*\\)[[:digit:]]\\+"
+grep --exclude-dir=.git -i -e "$bz_regex" "$@"
