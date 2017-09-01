@@ -22,7 +22,6 @@ if [ `whoami` != root ]; then
 	usage Must run as root
 fi
 
-#testrepo=/home/merlinm/pagure/fork-merlinm/standard-test-roles
 testrepo=
 ansible_playbook_cmd=ansible-playbook
 ansible_tags=
@@ -62,10 +61,14 @@ do
 	atomic)
 		case $fedora_release in
 		25)
-			export TEST_SUBJECTS=/home/merlinm/atomic25.qcow2 ;;
+			atomic_image_url="https://download.fedoraproject.org/pub/alt/atomic/stable/Fedora-Atomic-25-20170705.0/CloudImages/x86_64/images/Fedora-Atomic-25-20170705.0.x86_64.qcow2" ;;
 		26)
-			export TEST_SUBJECTS=/home/merlinm/atomic26.qcow2 ;;
+			atomic_image_url="https://download.fedoraproject.org/pub/alt/atomic/stable/Fedora-Atomic-26-20170821.0/CloudImages/x86_64/images/Fedora-Atomic-26-20170821.0.x86_64.qcow2" ;;
 		esac
+		export TEST_SUBJECTS=$HOME/`basename $atomic_image_url`
+		if [ ! -e $TEST_SUBJECTS ]; then
+			wget -O $TEST_SUBJECTS $atomic_image_url
+		fi
 		export TEST_ARTIFACTS=$PWD/artifacts-atomic
 		ansible_tags=atomic
 		shift
@@ -78,6 +81,12 @@ do
 			export TEST_SUBJECTS="https://download.fedoraproject.org/pub/fedora/linux/releases/26/CloudImages/x86_64/images/Fedora-Cloud-Base-Vagrant-26-1.5.x86_64.vagrant-libvirt.box" ;;
 		esac
 		export TEST_ARTIFACTS=$PWD/artifacts-vagrant
+		ansible_tags=classic
+		shift
+		;;
+	local)
+		TEST_SUBJECTS=local
+		export TEST_ARTIFACTS=$PWD/artifacts-local
 		ansible_tags=classic
 		shift
 		;;
