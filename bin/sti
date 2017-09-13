@@ -4,7 +4,7 @@ usage() {
 	if [ $# -ne 0 ]; then
 		echo "$0: $@" 1>&2
 	fi
-	echo "Usage: $0 [ -3 ] [ --debug ] [ --release 25 | 26 ] [ --testrepo /path/to/git/repo ] container | atomic | vagrant [ -- playbook-args ... ]" 1>&2
+	echo "Usage: $0 [ -3 ] [ --debug ] [ --release f25 | f26 | c73 ] [ --testrepo /path/to/git/repo ] container | atomic | vagrant [ -- playbook-args ... ]" 1>&2
 	exit 1
 }
 
@@ -26,7 +26,7 @@ testrepo=
 ansible_playbook_cmd=ansible-playbook
 ansible_tags=
 test_debug=0
-fedora_release=26
+fedora_release=f26
 
 while [ $# -gt 0 ]
 do
@@ -49,9 +49,9 @@ do
 		;;
 	docker|container)
 		case $fedora_release in
-		25)
+		f25)
 			export TEST_SUBJECTS=docker:fedora:25 ;;
-		26)
+		f26)
 			export TEST_SUBJECTS=docker:fedora:26 ;;
 		esac
 		export TEST_ARTIFACTS=$PWD/artifacts-docker
@@ -60,10 +60,12 @@ do
 		;;
 	atomic)
 		case $fedora_release in
-		25)
+		f25)
 			atomic_image_url="https://download.fedoraproject.org/pub/alt/atomic/stable/Fedora-Atomic-25-20170705.0/CloudImages/x86_64/images/Fedora-Atomic-25-20170705.0.x86_64.qcow2" ;;
-		26)
+		f26)
 			atomic_image_url="https://download.fedoraproject.org/pub/alt/atomic/stable/Fedora-Atomic-26-20170821.0/CloudImages/x86_64/images/Fedora-Atomic-26-20170821.0.x86_64.qcow2" ;;
+		c73)
+			atomic_image_url="http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-1707.qcow2" ;;
 		esac
 		export TEST_SUBJECTS=$HOME/`basename $atomic_image_url`
 		if [ ! -e $TEST_SUBJECTS ]; then
@@ -75,9 +77,9 @@ do
 		;;
 	vagrant)
 		case $fedora_release in
-		25)
+		f25)
 			export TEST_SUBJECTS="https://download.fedoraproject.org/pub/fedora/linux/releases/25/CloudImages/x86_64/images/Fedora-Cloud-Base-Vagrant-25-1.3.x86_64.vagrant-libvirt.box" ;;
-		26)
+		f26)
 			export TEST_SUBJECTS="https://download.fedoraproject.org/pub/fedora/linux/releases/26/CloudImages/x86_64/images/Fedora-Cloud-Base-Vagrant-26-1.5.x86_64.vagrant-libvirt.box" ;;
 		esac
 		export TEST_ARTIFACTS=$PWD/artifacts-vagrant
