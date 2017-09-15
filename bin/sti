@@ -12,6 +12,7 @@ usage() {
 dumpenv() {
 	echo Environment:
 	echo ANSIBLE_INVENTORY=$ANSIBLE_INVENTORY
+	echo ANSIBLE_ROLES_PATH=$ANSIBLE_INVENTORY
 	echo PATH=$PATH
 	echo TEST_ARTIFACTS=$TEST_ARTIFACTS
 	echo TEST_DEBUG=$TEST_DEBUG
@@ -127,14 +128,17 @@ if [ -n "$testrepo" ]; then
 	# include any modified scripts in path
 	export PATH=$testrepo/scripts:$PATH
 	# use any modifed dynamic inventory scripts
+	ansible_roles=$testrepo/roles
 	ansible_inventory=$testrepo/inventory
 	export TEST_DYNAMIC_INVENTORY_DIRECTORY=$ansible_inventory
 else
+	ansible_roles=/etc/ansible/roles
 	ansible_inventory=/usr/share/ansible/inventory
 	unset TEST_DYNAMIC_INVENTORY_DIRECTORY
 fi
 
 export ANSIBLE_INVENTORY=$(test -e inventory && echo inventory || echo $ansible_inventory)
+export ANSIBLE_ROLES_PATH=$ansible_roles
 export TEST_DEBUG=$test_debug
 
 dumpenv
