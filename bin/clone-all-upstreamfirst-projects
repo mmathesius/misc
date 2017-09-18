@@ -1,0 +1,22 @@
+#!/bin/bash
+
+upstream_url="https://upstreamfirst.fedorainfracloud.org"
+
+# jq_filter='.projects[].fullname'
+jq_filter='.projects[] | select(.fullname|test("^forks/")|not) | .fullname'
+
+wget -O - "$upstream_url/api/0/projects" \
+| jq -r "$jq_filter" \
+| while read p; do
+    echo "Project: $p"
+    if [ -d "$p" ]; then
+      echo "Freshening..."
+      pushd "$p" >/dev/null
+      git checkout master
+      git pull
+      popd >/dev/null
+    else
+      echo "Cloning..."
+      git clone "$upstream_url/$p.git"
+    fi
+  done
