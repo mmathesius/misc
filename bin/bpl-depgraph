@@ -1,0 +1,14 @@
+#!/bin/sh
+# baseruntime-package-lists dependency graph generator
+if [ $# -ne 2 ]; then
+  echo "Usage: $0 module arch"
+  exit 1
+fi
+module="$1"
+arch="$2"
+resolveopt="--selfhost"
+# swap stdout/stderr
+depchase -v -a $arch -c repo/Fedora*.cfg resolve \
+  $resolveopt $(cat data/Fedora/devel/$module/$arch/toplevel*txt) \
+  $(sed 's/^/--hint /' data/Fedora/devel/$module/common*txt) \
+  3>&2 2>&1 1>&3 3>&-
