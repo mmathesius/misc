@@ -1,0 +1,37 @@
+#!/bin/sh
+# dnf query wrapper to use baseruntime-package-lists repos
+
+# function to extract list of section headings from an INI-like config file
+cfg_sections ()
+{
+    cfgfile="$1"
+    sed -n "s/^\[\([^]]*\)\]/\1/p" < $cfgfile
+}
+
+# function to extract a variable from an INI-like config file
+cfg_var ()
+{
+    cfgfile="$1"
+    section="$2"
+    param="$3"
+    sed -nr "/^\[${section}\]/ { :l /^${param}[ ]*=/ { s/.*=[ ]*//; p; q;}; n; b l;}" < $cfgfile
+}
+
+
+# locate the BPL config file
+cfg=${cfg:-`ls repo/Fedora-*.cfg`}
+
+arch=${arch:-`arch`}
+
+# generate dnf command line options to exclusively use the BPL repos
+repoconfig="--disablerepo=\"*\""
+sections=$(cfg_sections $cfg)
+for s in $sections
+do
+   p=$(cfg_var $cfg "$s" path)
+   p2=$(sed -e "s/{arch}/${arch}/g" <<<$p)
+   repoconfig="$repoconfig --repofrompath=$s,$p2"
+done
+
+# run dnf using the BPL repos
+eval dnf $repoconfig "$@"
