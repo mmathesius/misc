@@ -1,0 +1,4 @@
+#!/bin/sh
+# pipe standard input to RH internal pastebin
+# Courtesy of Tomas Sedovic <tsedovic@redhat.com> and Ewoud Kohl van Wijngaarden <ekohlvan@redhat.com>
+curl -F 'code2=<-' -F 'paste=Send' -w "%{redirect_url}\n" http://pastebin.test.redhat.com/pastebin.php

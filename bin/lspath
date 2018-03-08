@@ -1,0 +1,24 @@
+#!/bin/bash
+
+# list details about every component in provided path(s)
+
+action="ls -ldZ"
+for arg in "$@"
+do
+  case "$arg" in
+  /*)  p=/ ;;
+  *)   p= ;;
+  esac
+  IFS='/' read -ra C <<<"$arg"
+  for c in "${C[@]}"
+  do
+    p="$p$c"
+
+    $action $p
+
+    if [ -n "$c" ]
+    then
+        p="$p/"
+    fi
+  done
+done
