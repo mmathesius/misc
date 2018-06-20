@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# list add module:stream combinations present in Fedora dist-git
+
+upstream_url="https://src.fedoraproject.org"
+
+list_all_modules ()
+{
+    local api_url="$upstream_url/api/0/projects?namespace=modules&fork=0&short=1"
+    local jq_filter='.projects[].fullname | sub("^modules/"; "")'
+
+    curl --silent "$api_url" | jq -r "$jq_filter"
+}
+
+list_module_streams ()
+{
+    local module="$1"
+    local api_url="$upstream_url/api/0/modules/$module/git/branches"
+    local jq_filter='.branches[]'
+
+    curl --silent "$api_url" | jq -r "$jq_filter"
+}
+
+for m in $(list_all_modules); do
+    streams=$(list_module_streams $m)
+    case "$streams" in
+    "")         echo "### $m: no streams?" ;;
+    "master")   echo "### $m: only master stream?" ;;
+    *)          ;;
+    esac
+    for s in $streams; do
+        echo "$m:$s"
+    done
+done
