@@ -1,0 +1,19 @@
+#!/bin/bash
+# Usage: create-modulemd-defaults mod1:stream [ mod2:stream mod3:stream ... ]
+
+template='---
+document: modulemd-defaults
+version: 1
+data:
+  module: {{MODULE}}
+  stream: {{STREAM}}
+  profiles:
+    {{STREAM}}: [default]
+...'
+
+for m in "$@"
+do
+    module="${m%:*}"
+    stream="${m#*:}"
+    echo "$template" | sed -e "s/{{MODULE}}/$module/" -e "s/{{STREAM}}/$stream/" >$module.yaml
+done 
