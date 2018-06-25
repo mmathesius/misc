@@ -2,7 +2,29 @@
 
 # list add module:stream combinations present in Fedora dist-git
 
+USAGE="`basename $0` [ -u upstream-url ]"
+
 upstream_url="https://src.fedoraproject.org"
+
+OPTIND=1
+while getopts "h?u:" opt; do
+    case "$opt" in
+    h|\?)
+        echo "$USAGE"
+        exit 0
+        ;;
+    u)  upstream_url="$OPTARG"
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+if [ $# -ne 0 ]; then
+    echo "$USAGE" 1>&2
+    exit 1
+fi
 
 list_all_modules ()
 {
