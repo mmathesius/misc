@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# list active modules from Fedora PDC
+
+USAGE="`basename $0` [ -u upstream-url ]"
+
+pdc_url="https://pdc.fedoraproject.org"
+
+OPTIND=1
+while getopts "h?u:" opt; do
+    case "$opt" in
+    h|\?)
+        echo "$USAGE"
+        exit 0
+        ;;
+    u)  pdc_url="$OPTARG"
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+if [ $# -ne 0 ]; then
+    echo "$USAGE" 1>&2
+    exit 1
+fi
+
+list_active_modules ()
+{
+    local api_url="$pdc_url/rest_api/v1/modules/?active=1&fields=name&fields=stream&fields=version&fields=context"
+    local jq_filter='.results[] | "" + .name + ":" + .stream + ":" + .version + ":" +.context'
+
+    local pagecount=0
+    local next="$api_url"
+    while [ -n "$next" ]; do
+        ((pagecount++))
+
+        # fetch the next page
+        page=$(curl --silent "$next")
+
+        # list the modules from this page
+        jq -r "$jq_filter" <<<$page
+
+        # get the link to the next page
+        next=$(jq -r ".next" <<<$page)
+    done
+}
+
+list_active_modules
