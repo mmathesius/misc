@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# check if running under 'script' command
+
+if lsof -a -c script "$(tty)" >/dev/null
+then
+    echo yes
+    true
+else
+    echo no
+    false
+fi
