@@ -2,7 +2,7 @@
 
 # check if running under 'script' command
 
-if lsof -a -c script "$(tty)" >/dev/null
+if lsof -a -c script "$(tty)" >/dev/null 2>&1
 then
     echo yes
     true
