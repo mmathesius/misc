@@ -1,0 +1,58 @@
+#!/bin/bash
+
+# Work In Progress - no guarantees about any of this
+
+# perform various cleanups to free up local disk space
+#  some of this assumes "sudo" access
+
+mock_cleanup=1
+docker_cleanup=1
+podman_cleanup=1
+pkgkit_cleanup=1
+
+if [ $mock_cleanup -ne 0 -a -d /var/lib/mock ]
+then
+  echo === cleaning up mock chroots and cache
+  if [ -d /var/lib/mock ]
+    for mrel in `ls /var/lib/mock`
+    do
+      echo === scrubbing mock chroot for $mrel
+      mock -r $mrel --scrub=all
+    done
+  fi
+  if [ -d /var/cache/mock ]
+  then
+    for mrel in `ls /var/cache/mock/`
+    do
+      echo === scrubbing mock cache for $mrel
+      mock -r $mrel --scrub=all
+    done
+  fi
+fi
+
+
+if [ $docker_cleanup -ne 0 ]
+then
+  echo === cleaning up docker dangling images, containers, volumes, networks
+  docker system prune -a
+fi
+
+if [ $podman_cleanup -ne 0 ]
+then
+  # Clean up podman containers in $HOME/.local/share/containers/storage/vfs/dir
+
+  # this does a poor job
+  podman container cleanup -a
+  podman image prune # --all
+fi
+
+if [ $pkgkit_cleanup -ne 0 ]
+then
+  # Cleanup PackageKit cache in /var/cache/PackageKit
+  sudo pkcon refresh force -c -1
+  # If a particular repo reports an “Fatal error: Error when getting information for file '/var/cache/PackageKit/xx/yy/reponame/repodata/...” error, then try:
+  # sudo dnf config-manager --set-disable reponame
+  # sudo pkcon refresh force -c -1
+  # sudo dnf config-manager --set-enable reponame
+  # sudo pkcon refresh force -c -1
+fi
