@@ -14,6 +14,7 @@ if [ $mock_cleanup -ne 0 -a -d /var/lib/mock ]
 then
   echo === cleaning up mock chroots and cache
   if [ -d /var/lib/mock ]
+  then
     for mrel in `ls /var/lib/mock`
     do
       echo === scrubbing mock chroot for $mrel
