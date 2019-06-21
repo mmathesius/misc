@@ -3,4 +3,4 @@
 # Print current time in YYYYMMDDHHMMSS format
 #
 # Bash internal: printf "%(%Y%m%d%H%M%S)T\n"
-date +'%Y%m%d%H%M%S'
+date "$@" +'%Y%m%d%H%M%S'
