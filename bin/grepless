@@ -1,0 +1,4 @@
+#!/bin/bash
+# paginate the output of recursive grep for simple pattern at given path
+# Usage: $0 pattern path
+less -p"$1" $(grep -rl "$1" "$2")

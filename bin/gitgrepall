@@ -1,0 +1,7 @@
+#!/bin/bash
+# grep for expression in all branchs of the current git repo
+# Usage: $0 [ grep-options ... ]
+git branch -a | sed -e 's/^[ *]*//' -e '/->/d' | while read branch
+do
+    git grep "$@" $branch | cat
+done
