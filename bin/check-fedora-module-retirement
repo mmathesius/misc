@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# check a list of module name:stream lines from stdin
+
+USAGE="`basename $0` [ -c checkout-command ]"
+
+co_cmd="fedpkg"
+
+OPTIND=1
+while getopts "h?n:s:u:S:" opt; do
+    case "$opt" in
+    h|\?)
+        echo "$USAGE"
+        exit 0
+        ;;
+    c)  co_cmd="$OPTARG"
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+if [ $# -ne 0 ]; then
+    echo "$USAGE" 1>&2
+    exit 1
+fi
+
+# will checkout each module from dist-git and check if stream
+# has a dead.package or dead.module file present
+
+# create a temporary directory and change to it
+tmpdir=$(mktemp -d)
+cd $tmpdir || exit 1
+
+while read modstream; do
+    echo "=== $modstream ==="
+    name=$(cut -d: -f1 <<< $modstream)
+    stream=$(cut -d: -f2 <<< $modstream)
+
+    $co_cmd -q clone -a -b "$stream" "modules/$name"
+
+    if [ -f "$name/dead.package" -o -f "$name/dead.module" ]; then
+        echo "OK: $modstream"
+    else
+        echo "NOT_RETIRED: $modstream"
+        ls $name
+    fi
+
+    rm -rf $name
+done
