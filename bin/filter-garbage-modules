@@ -1,0 +1,36 @@
+#!/usr/bin/python3
+
+import sys
+
+# Note: possible module states are:
+#     init, wait, build, done, failed, ready, garbage
+
+mod_state = {}
+
+def main (arguments):
+    # loop through the output from list-fedora-mbs-modules, which is assumed to
+    # be in module ID sorted order (eg., oldest build first), saving the latest
+    # valid state for each module stream
+    for line in sys.stdin:
+        line = line.rstrip()
+        (name, stream, version, context, scratch, id, state) = line.split(':')
+
+        # canonicalize scratch value
+        if scratch != 'true':
+            scratch = 'false'
+
+        # disregard all states but ready and garbage
+        if state not in ['ready', 'garbage']:
+            continue
+
+        # save/overwrite state for name:stream
+        mod_state[':'.join([name, stream])] = state
+
+    # list all trashed module streams
+    for mod, state in mod_state.items():
+        if state != 'garbage':
+            continue
+        print("{}".format(mod))
+
+if __name__ == '__main__':
+    sys.exit (main (sys.argv[1:]))
