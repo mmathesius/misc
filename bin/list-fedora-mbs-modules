@@ -1,0 +1,61 @@
+#!/bin/bash
+
+# list modules from Fedora MBS
+
+USAGE="`basename $0` [ -u upstream-url ] [ -n name ] [ -s stream ] [ -S state ]"
+
+mbs_url="https://mbs.fedoraproject.org"
+mod_filter=
+
+OPTIND=1
+while getopts "h?n:s:u:S:" opt; do
+    case "$opt" in
+    h|\?)
+        echo "$USAGE"
+        exit 0
+        ;;
+    n)  mod_filter="${mod_filter}name=$OPTARG&"
+        ;;
+    s)  mod_filter="${mod_filter}stream=$OPTARG&"
+        ;;
+    u)  mbs_url="$OPTARG"
+        ;;
+    S)  mod_filter="${mod_filter}state=$OPTARG&"
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+if [ $# -ne 0 ]; then
+    echo "$USAGE" 1>&2
+    exit 1
+fi
+
+api_url="$mbs_url/module-build-service/1/module-builds/?${mod_filter}short=1&order_by=id"
+# jq_filter='.items[] | "" + .name + ":" + .stream + ":" + .version + ":" + .context + ":" + (.scratch|tostring) + ":" + .state_name'
+jq_filter='.items[] | [ .name, .stream, .version, .context, (.scratch|tostring), .id, .state_name ] | join(":")'
+
+list_modules ()
+{
+    local pagecount=0
+    local next="$api_url"
+    while [ -n "$next" ]; do
+        ((pagecount++))
+
+        # fetch the next page
+        page=$(curl --silent "$next")
+
+        # list the modules from this page
+        jq -r "$jq_filter" <<<$page
+
+        # get the link to the next page
+        next=$(jq -r ".meta.next" <<<$page)
+
+        # adjust incorrect protocol returned in next page link
+        next="${next/#http:/https:}"
+    done
+}
+
+list_modules
