@@ -45,7 +45,7 @@ list_modules ()
         ((pagecount++))
 
         # fetch the next page
-        page=$(curl --silent "$next")
+        page=$(curl --silent --insecure "$next")
 
         # list the modules from this page
         jq -r "$jq_filter" <<<$page
