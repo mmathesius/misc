@@ -7,7 +7,7 @@ USAGE="`basename $0` [ -c checkout-command ]"
 co_cmd="fedpkg"
 
 OPTIND=1
-while getopts "h?n:s:u:S:" opt; do
+while getopts "h?c:" opt; do
     case "$opt" in
     h|\?)
         echo "$USAGE"
