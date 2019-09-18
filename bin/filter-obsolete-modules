@@ -2,10 +2,7 @@
 
 import sys
 
-# Note: possible module states are:
-#     init, wait, build, done, failed, ready, garbage
-
-mod_state = {}
+mod_status = {}
 
 def main (arguments):
     # loop through the output from list-fedora-mbs-modules, which is assumed to
@@ -15,20 +12,24 @@ def main (arguments):
         line = line.rstrip()
         (name, stream, version, context, scratch, id, state) = line.split(':')
 
-        # canonicalize scratch value
-        if scratch != 'true':
-            scratch = 'false'
+        # Note: possible module states are:
+        #     init, wait, build, done, failed, ready, garbage
 
-        # disregard all states but ready and garbage
-        if state not in ['ready', 'garbage']:
+        # ignore scratch builds
+        if scratch == 'true':
             continue
 
-        # save/overwrite state for name:stream
-        mod_state[':'.join([name, stream])] = state
+        modstream = ':'.join([name, stream])
 
-    # list all trashed module streams
-    for mod, state in mod_state.items():
-        if state != 'garbage':
+        if modstream not in mod_status:
+            mod_status[modstream] = 'seen'
+        
+        if state == 'ready':
+            mod_status[modstream] = 'active'
+
+    # list all obsolete module streams
+    for mod, status in mod_status.items():
+        if status == 'active':
             continue
         print("{}".format(mod))
 
