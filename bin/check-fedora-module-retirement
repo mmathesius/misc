@@ -33,17 +33,23 @@ fi
 tmpdir=$(mktemp -d)
 cd $tmpdir || exit 1
 
-while read modstream; do
+while read line; do
+    name=$(cut -d: -f1 <<< $line)
+    stream=$(cut -d: -f2 <<< $line)
+    modstream="$name:$stream"
+
     echo "=== $modstream ==="
-    name=$(cut -d: -f1 <<< $modstream)
-    stream=$(cut -d: -f2 <<< $modstream)
 
-    $co_cmd -q clone -a -b "$stream" "modules/$name"
+    if ! $co_cmd -q clone -a -b "$stream" "modules/$name"; then
+        echo "STATUS_CLONE_FAILED: $modstream"
+        rm -rf $name
+        continue
+    fi
 
-    if [ -f "$name/dead.package" -o -f "$name/dead.module" ]; then
-        echo "OK: $modstream"
+    if [ -f "$name/dead.package" -o -f "$name/dead.module" -o -f "$name/READONLY" ]; then
+        echo "STATUS_RETIRED: $modstream"
     else
-        echo "NOT_RETIRED: $modstream"
+        echo "STATUS_NOT_RETIRED: $modstream"
         ls $name
     fi
 

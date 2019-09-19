@@ -2,7 +2,7 @@
 
 # list modules from Fedora MBS
 
-USAGE="`basename $0` [ -u upstream-url ] [ -n name ] [ -s stream ] [ -S state ]"
+USAGE="`basename $0` [ -u MBS-url ] [ -n name ] [ -s stream ] [ -S state ]"
 
 mbs_url="https://mbs.fedoraproject.org"
 mod_filter=

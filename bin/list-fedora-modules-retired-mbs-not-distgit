@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# generate a list of modules that have been marked as "garbage"
+# in the MBS, but aren't marked as dead in dist-git
+
+USAGE="`basename $0` [ -c checkout-command ] [ -u MBS-url ]"
+
+co_cmd="fedpkg"
+mbs_url="https://mbs.fedoraproject.org"
+
+OPTIND=1
+while getopts "h?c:u:" opt; do
+    case "$opt" in
+    h|\?)
+        echo "$USAGE"
+        exit 0
+        ;;
+    c)  co_cmd="$OPTARG"
+        ;;
+    u)  mbs_url="$OPTARG"
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+if [ $# -ne 0 ]; then
+    echo "$USAGE" 1>&2
+    exit 1
+fi
+
+list-fedora-mbs-modules -u "$mbs_url" \
+| determine-module-status \
+| sed -n -e 's/:retired$//p' \
+| check-fedora-module-retirement -c "$co_cmd" \
+| sed -n "s/^STATUS_NOT_RETIRED: //p" \
+| sort
