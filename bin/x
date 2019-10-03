@@ -1,4 +1,5 @@
 #!/bin/bash
+# run named command, swapping last two arguments
 if [ $# -lt 3 ]
 then
 	exec "$@"
