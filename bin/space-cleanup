@@ -18,7 +18,7 @@ then
     for mrel in `ls /var/lib/mock`
     do
       echo === scrubbing mock chroot for $mrel
-      mock -r $mrel --scrub=all
+      mock -r "$mrel" --scrub=all
     done
   fi
   if [ -d /var/cache/mock ]
@@ -26,7 +26,8 @@ then
     for mrel in `ls /var/cache/mock/`
     do
       echo === scrubbing mock cache for $mrel
-      mock -r $mrel --scrub=all
+      mock -r "$mrel" --scrub=all
+      rm -rf "/var/cache/mock/$mrel"
     done
   fi
 fi
