@@ -9,6 +9,7 @@ mock_cleanup=1
 docker_cleanup=1
 podman_cleanup=1
 pkgkit_cleanup=1
+dnf_cleanup=1
 
 if [ $mock_cleanup -ne 0 -a -d /var/lib/mock ]
 then
@@ -57,4 +58,9 @@ then
   # sudo pkcon refresh force -c -1
   # sudo dnf config-manager --set-enable reponame
   # sudo pkcon refresh force -c -1
+fi
+
+if [ $dnf_cleanup -ne 0 ]
+then
+  sudo dnf clean all
 fi
