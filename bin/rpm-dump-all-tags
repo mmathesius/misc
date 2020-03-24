@@ -1,0 +1,17 @@
+#!/bin/bash
+skipundef=1
+alltags=($(rpm --querytags))
+
+for pkg in "$@"
+do
+  pkgbase=$(basename "$pkg")
+  for tag in ${alltags[@]}
+  do
+    val=$(rpm -q --nosignature --qf "%{$tag}" -p "$pkg")
+    if [ $skipundef -ne 0 -a "$val" == "(none)" ]
+    then
+      continue
+    fi
+    echo "$pkgbase:$tag=$val"
+  done
+done
