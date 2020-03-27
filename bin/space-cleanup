@@ -43,10 +43,12 @@ fi
 if [ $podman_cleanup -ne 0 ]
 then
   # Clean up podman containers in $HOME/.local/share/containers/storage/vfs/dir
-
-  # this does a poor job
   podman container cleanup -a
   podman image prune # --all
+
+  # Clean up podman containers in /var/lib/containers/storage/overlay
+  sudo podman container cleanup -a
+  sudo podman image prune # --all
 fi
 
 if [ $pkgkit_cleanup -ne 0 ]
