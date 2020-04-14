@@ -1,0 +1,46 @@
+#!/bin/bash
+
+usage() {
+  echo "Usage: $0 python-avocado-*.tag.src.rpm" 2>&1
+  exit 1
+}
+
+if [ $# -ne 1 ]
+then
+  usage
+fi
+
+srpm="$1"
+
+if [[ $srpm != python-avocado-*.*.src.rpm ]]
+then
+  usage
+fi
+
+dist=$(sed -n -e 's/^.*\.\([^.]*\)\.src\.rpm$/\1/p' <<<$srpm)
+ver_num=$(sed -n -e 's/^[^0-9]*\([0-9][0-9]*\).*$/\1/p' <<<$dist)
+
+case "$dist" in
+fc33)
+  mock_cfg="fedora-${ver_num}-x86_64"
+  mod_repo="rawhide-modular"
+  ;;
+fc*)
+  mock_cfg="fedora-${ver_num}-x86_64"
+  mod_repo="fedora-modular"
+  ;;
+el*)
+  mock_cfg="epel-${ver_num}-x86_64"
+  mod_repo="epel-modular"
+  ;;
+*)
+  usage
+  ;;
+esac
+
+mock -r ${mock_cfg} --init
+mock -r ${mock_cfg} --enablerepo=${mod_repo} --dnf-cmd module enable avocado:latest
+mock -r ${mock_cfg} --enablerepo=${mod_repo} --dnf-cmd install python3-aexpect
+mock -r ${mock_cfg} --enablerepo=${mod_repo} --dnf-cmd module disable avocado
+mock -r ${mock_cfg} --no-clean ${srpm}
+
