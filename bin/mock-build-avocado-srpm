@@ -38,6 +38,8 @@ el*)
   ;;
 esac
 
+set -x
+
 mock -r ${mock_cfg} --init
 mock -r ${mock_cfg} --enablerepo=${mod_repo} --dnf-cmd module enable avocado:latest
 mock -r ${mock_cfg} --enablerepo=${mod_repo} --dnf-cmd install python3-aexpect
