@@ -5,16 +5,37 @@
 # perform various cleanups to free up local disk space
 #  some of this assumes "sudo" access
 
-mock_cleanup=1
-docker_cleanup=1
-podman_cleanup=1
-pkgkit_cleanup=1
-dnf_cleanup=1
+mock_cleanup=0
+docker_cleanup=0
+podman_cleanup=0
+pkgkit_cleanup=0
+dnf_cleanup=0
 
-if [ $mock_cleanup -ne 0 -a -d /var/lib/mock ]
-then
+usage() {
+  cat >&2 <<-EOF
+	Usage `basename $0` <options> [ [--] ...]
+
+	Options:
+	  --mock
+	      Cleanup mock chroots and cache
+	  --docker
+	      Cleanup docker dangling images, containers, volumes, networks
+	  --podman
+	      Cleanup podman dangling images, containers
+	  --pkgkit
+	      Cleanup PackageKit cache
+	  --dnf
+	      Cleanup DNF cache
+	  --all
+	      All above cleanups
+	EOF
+
+  exit 1
+}
+
+cleanup_mock() {
   echo === cleaning up mock chroots and cache
-  if [ -d /var/lib/mock ]
+  if [[ -d /var/lib/mock ]]
   then
     for mrel in `ls /var/lib/mock`
     do
@@ -22,7 +43,7 @@ then
       mock -r "$mrel" --scrub=all
     done
   fi
-  if [ -d /var/cache/mock ]
+  if [[ -d /var/cache/mock ]]
   then
     for mrel in `ls /var/cache/mock/`
     do
@@ -31,28 +52,36 @@ then
       rm -rf "/var/cache/mock/$mrel"
     done
   fi
-fi
+}
 
-
-if [ $docker_cleanup -ne 0 ]
-then
+cleanup_docker() {
   echo === cleaning up docker dangling images, containers, volumes, networks
-  docker system prune -a
-fi
 
-if [ $podman_cleanup -ne 0 ]
-then
+  if ! command -v docker >/dev/null 2>&1
+  then
+    echo "docker command is not available"
+    return
+  fi
+
+  docker system prune -a
+}
+
+cleanup_podman() {
+  echo === cleaning up podman dangling images, containers
+
+  if ! command -v podman >/dev/null 2>&1
+  then
+    echo "docker command is not available"
+    return
+  fi
+
   # Clean up podman containers in $HOME/.local/share/containers/storage/vfs/dir
+  # this does a poor job
   podman container cleanup -a
   podman image prune # --all
+}
 
-  # Clean up podman containers in /var/lib/containers/storage/overlay
-  sudo podman container cleanup -a
-  sudo podman image prune # --all
-fi
-
-if [ $pkgkit_cleanup -ne 0 ]
-then
+cleanup_pkgkit() {
   # Cleanup PackageKit cache in /var/cache/PackageKit
   sudo pkcon refresh force -c -1
   # If a particular repo reports an “Fatal error: Error when getting information for file '/var/cache/PackageKit/xx/yy/reponame/repodata/...” error, then try:
@@ -60,9 +89,87 @@ then
   # sudo pkcon refresh force -c -1
   # sudo dnf config-manager --set-enable reponame
   # sudo pkcon refresh force -c -1
+}
+
+cleanup_dnf() {
+  sudo dnf clean all
+}
+
+
+while (( $# >= 1 ))
+do
+  case "$1" in
+    --mock )
+      mock_cleanup=1
+      shift
+      ;;
+    --docker )
+      docker_cleanup=1
+      shift
+      ;;
+    --podman )
+      podman_cleanup=1
+      shift
+      ;;
+    --pkgkit )
+      pkgkit_cleanup=1
+      shift
+      ;;
+    --dnf )
+      dnf_cleanup=1
+      shift
+      ;;
+    --all )
+      mock_cleanup=1
+      docker_cleanup=1
+      podman_cleanup=1
+      pkgkit_cleanup=1
+      dnf_cleanup=1
+      shift
+      ;;
+    -- )
+      shift
+      break
+      ;;
+    -* )
+      echo "Unknown option: $1" >&2
+      usage
+      ;;
+    * )
+      break
+      ;;
+  esac
+done
+
+if ! (( mock_cleanup || docker_cleanup || podman_cleanup || pkgkit_cleanup || dnf_cleanup ))
+then
+  echo "Select at least one option" >&2
+  usage
 fi
 
-if [ $dnf_cleanup -ne 0 ]
+
+if (( mock_cleanup ))
 then
-  sudo dnf clean all
+  cleanup_mock
 fi
+
+if (( docker_cleanup ))
+then
+  cleanup_docker
+fi
+
+if (( podman_cleanup ))
+then
+  cleanup_podman
+fi
+
+if (( pkgkit_cleanup ))
+then
+  cleanup_pkgkit
+fi
+
+if (( dnf_cleanup ))
+then
+  cleanup_dnf
+fi
+
