@@ -1,6 +1,48 @@
 #!/bin/bash
 # paginate the output of recursive grep for simple pattern at given path
 # Usage: $0 pattern path
-pat="$1"
+
+
+USAGE="`basename $0` [-i] [-r] [-w] pattern [file...]"
+
+grep_args=""
+less_args=""
+less_pattern_prefix=""
+less_pattern_suffix=""
+
+OPTIND=1
+while getopts "h?irwX:" opt; do
+    case "$opt" in
+    h|\?)
+        echo "$USAGE"
+        exit 0
+        ;;
+    i)  grep_args="${grep_args} -i"
+        less_args="${less_args} -i"
+        ;;
+    r)  grep_args="${grep_args} -r"
+        ;;
+    w)  grep_args="${grep_args} -w"
+        less_pattern_prefix="\b"
+        less_pattern_suffix="\b"
+        ;;
+    X)  X="$OPTARG"
+        ;;
+    esac
+done
+
+shift $((OPTIND-1))
+[ "${1:-}" = "--" ] && shift
+
+if [ $# -lt 1 ]; then
+    echo "$USAGE" 1>&2
+    exit 1
+fi
+
+pattern="$1"
 shift
-less -i -p"$pat" $(grep -ril "$pat" "$@")
+
+less \
+    ${less_args} \
+    -p"${less_pattern_prefix}${pattern}${less_pattern_suffix}" \
+    $(grep -l ${grep_args} "${pattern}" "$@")
