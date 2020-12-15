@@ -1,17 +1,20 @@
 #!/bin/bash
 
-# list all module:stream combinations present in Fedora dist-git
+# list, and optionally download, all module:stream combinations present in Fedora dist-git
 
-USAGE="`basename $0` [ -u upstream-url ]"
+USAGE="`basename $0` [ -u upstream-url ] [ -d ]"
 
 upstream_url="https://src.fedoraproject.org"
+download=no
 
 OPTIND=1
-while getopts "h?u:" opt; do
+while getopts "h?du:" opt; do
     case "$opt" in
     h|\?)
         echo "$USAGE"
         exit 0
+        ;;
+    d)  download=yes
         ;;
     u)  upstream_url="$OPTARG"
         ;;
@@ -52,5 +55,8 @@ for m in $(list_all_modules); do
     esac
     for s in $streams; do
         echo "$m:$s"
+        if [ $download = yes ]; then
+          curl -s -o "$m:$s.yaml" "$upstream_url/modules/$m/raw/$s/f/$m.yaml"
+        fi
     done
 done
